@@ -4,8 +4,13 @@ import sys
 import json
 from flask import Flask, jsonify, request
 from functools import wraps
+import subprocess
 
 app = Flask(__name__)
+
+# GitHub credentials from environment
+GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '')
+GITHUB_REPO = 'effi35/Project-Alpha'
 
 # Simple request logger
 @app.before_request
@@ -29,7 +34,8 @@ def root():
     return jsonify({
         "name": "GitHub Project-Alpha MCP",
         "version": "1.0.0",
-        "status": "running"
+        "status": "running",
+        "endpoint": "/tools"
     }), 200
 
 # MCP Tools discovery endpoint
@@ -88,6 +94,7 @@ def list_tools():
             }
         ]
     }
+    print(f"[TOOLS] Returning {len(tools['tools'])} tools", file=sys.stderr)
     return jsonify(tools), 200
 
 # Tool execution endpoint
@@ -100,6 +107,8 @@ def call_tool():
     
     tool_name = data.get('name')
     tool_input = data.get('input', {})
+    
+    print(f"[TOOL_CALL] {tool_name} with input: {tool_input}", file=sys.stderr)
     
     # Placeholder responses for MCP compatibility
     if tool_name == "read_file":
@@ -117,6 +126,28 @@ def call_tool():
         }), 200
     else:
         return jsonify({"error": f"Unknown tool: {tool_name}"}), 400
+
+# OpenAI MCP Resource endpoint
+@app.route('/resources', methods=['GET', 'POST'])
+def resources():
+    return jsonify({
+        "resources": []
+    }), 200
+
+# OpenAI MCP Prompts endpoint
+@app.route('/prompts', methods=['GET', 'POST'])
+def prompts():
+    return jsonify({
+        "prompts": []
+    }), 200
+
+# Initialize endpoint (for some MCP clients)
+@app.route('/initialize', methods=['POST'])
+def initialize():
+    return jsonify({
+        "version": "1.0.0",
+        "name": "GitHub Project-Alpha Manager"
+    }), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
